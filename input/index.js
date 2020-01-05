@@ -24,6 +24,7 @@ export default class RealInput {
     this.inputCanvas = wx.createCanvas()
     this.inputCanvas.width = 180
     this.inputCanvas.height = 320
+    this.inputContext = this.inputCanvas.getContext('2d')
   }
 
   setClientKey(clientKey) {
@@ -48,21 +49,23 @@ export default class RealInput {
   }
 
   render(ctx, startX=0, startY=0) {
-    //ctx.drawImage(this.inputCanvas, 0, 0)
+    // 显示摄像头影像，用于调试
+    // ctx.drawImage(this.inputCanvas, 0, 0)
     this.posePool.render(ctx, startX, startY)
   }
 
-  getOnePlayer() {
-    return this.posePool.getOne()
+  getFirstPlayer() {
+    return this.posePool.getFirst()
   }
 
   update() {
     this.posePool.update()
   }
 
+  // 从服务器返回动作信息
   __onInputResponse(msg) {
     if(msg.poses) {
-      // translate coordinates
+      // translate coordinates to this device
       for(const p of msg.poses) {
         for(const k in p.keypoints) {
           const kp = p.keypoints[k]
@@ -74,12 +77,15 @@ export default class RealInput {
     }
   }
 
+  // 从摄像头获得输入图像
   __onFrame(frame) {
     if(this.busy || !this.client) {
       return
     }
-    const st = new Date()
     this.busy = true
+    const st = new Date()
+
+    // hiddenCanvas的大小等于摄像头图像大小，inputCanvas的大小等于要识别的图像大小
     if(this.hiddenCanvas.width != frame.width || this.hiddenCanvas.height != frame.height) {
       this.hiddenCanvas.width = frame.width
       this.hiddenCanvas.height = frame.height
@@ -89,14 +95,36 @@ export default class RealInput {
     const img = this.hiddenContext.createImageData(frame.width, frame.height)
     img.data.set(bytes)
     this.hiddenContext.putImageData(img, 0, 0)
-    this.inputCanvas.getContext('2d').drawImage(this.hiddenCanvas, 0, 0, 
+    
+    // 压缩分辨率，摄像头分辨率到识别分辨率的转换
+    this.inputContext.drawImage(this.hiddenCanvas, 0, 0, 
       this.hiddenCanvas.width, this.hiddenCanvas.height, 0, 0,
       this.inputCanvas.width, this.inputCanvas.height)
+      
+    // 制作灰度图片，试图减少图片体积
+    /* 
+    const inputData = this.inputContext.getImageData(0, 0, this.inputCanvas.width, this.inputCanvas.height)
+    const data = inputData.data
+    for(let i = 0; i < data.byteLength; i += 4) {
+      const brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+      //const brightness = Math.floor((data[i] + data[i+1] + data[i+2])/3)
+      // red
+      data[i] = brightness;
+      // green
+      data[i + 1] = brightness;
+      // blue
+      data[i + 2] = brightness;
+    }
+    // overwrite original image
+    this.inputContext.putImageData(inputData, 0, 0)
+    */
+  
     const b64Image = this.inputCanvas.toDataURL('image/jpeg', 0.1)
     const jpegData = b64.decode(b64Image.slice(23))
     this.client.inputImage(this.model, jpegData)
 
-    // console.log(frame.width, frame.height, new Date() - st, 'ms')
+    // 上述操作大概6ms完成
+    //console.log(frame.width, frame.height, new Date() - st, 'ms', 'size', jpegData.byteLength)
     const delta = new Date() - this.lastMoveTime
     if(delta > 0) {
       setTimeout(() => {
@@ -124,6 +152,7 @@ export default class RealInput {
     this.camera.close()
   }
 
+  // 开始识别输入动作
   capture(config, cb) {
     if(config.inputFPS) {
       this.setInputFPS(config.inputFPS)

@@ -1,3 +1,4 @@
+// 单纯用来测试 RealInput
 import RealInput   from './input/index'
 const realInput = new RealInput()
 

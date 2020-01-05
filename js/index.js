@@ -17,7 +17,7 @@ export default class Game {
   constructor() {
     this.restart()
 
-    realInput.setClientKey('xx')
+    realInput.setClientKey('xxcRTlCPhDsd9TBL')
     realInput.openCamera()
     realInput.capture({
       inputFPS: 10,
@@ -153,7 +153,7 @@ export default class Game {
 
   // 游戏逻辑更新主函数
   update() {
-    const one = realInput.getOnePlayer()
+    const one = realInput.getFirstPlayer()
     realInput.update()
 
     if ( databus.gameOver ) {
@@ -176,11 +176,11 @@ export default class Game {
 
     this.collisionDetection()
 
-    if ( databus.frame % 20 === 0 ) {
+    if ( databus.frame % 30 === 0 ) {
       this.player.shoot()
       this.music.playShoot()
     }
-    if( databus.frame % 20 === 10 ) {
+    if( databus.frame % 30 === 15 ) {
       this.player2.shoot()
       this.music.playShoot()
     }

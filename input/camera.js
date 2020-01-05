@@ -9,7 +9,7 @@ export default class Camera {
     this.camera = null
   }
 
-  onShow() {
+  onShow(res) {
     if(this.camera && this.camera.frameCallback) {
       wx.listenFrameChange()
     }
@@ -30,6 +30,11 @@ export default class Camera {
       size: 'medium',
       success: () => {
         console.log('open camera succeeded')
+        wx.setKeepScreenOn({
+          keepScreenOn: true
+        })
+        wx.onShow(this.onShow)
+        wx.onHide(this.onHide)
         cb && cb()
       },
       fail: (err) => {
@@ -47,6 +52,8 @@ export default class Camera {
       }
       this.camera.destroy()
       this.camera = null
+      this.offShow(this.onShow)
+      this.offHide(this.onHide)
     }
   }
 

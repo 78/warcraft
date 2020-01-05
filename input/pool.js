@@ -56,7 +56,7 @@ export default class Pool {
     }
   }
 
-  getOne() {
+  getFirst() {
     if(this.objects.length > 0) {
       return this.objects[0]
     }

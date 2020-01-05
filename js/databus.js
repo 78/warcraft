@@ -31,10 +31,8 @@ export default class DataBus {
    * 此后不进入帧循环
    */
   removeEnemey(enemy) {
-    let temp = this.enemys.shift()
-
-    temp.visible = false
-
+    enemy.visible = false
+    this.enemys.splice(this.enemys.indexOf(enemy), 1)
     this.pool.recover('enemy', enemy)
   }
 
@@ -43,9 +41,8 @@ export default class DataBus {
    * 此后不进入帧循环
    */
   removeBullets(bullet) {
-    let temp = this.bullets.shift()
-
-    temp.visible = false
+    bullet.visible = false
+    this.bullets.splice(this.bullets.indexOf(bullet), 1)
 
     this.pool.recover('bullet', bullet)
   }
