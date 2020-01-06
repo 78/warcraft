@@ -25,6 +25,9 @@ export default class RealInput {
     this.inputCanvas.width = 180
     this.inputCanvas.height = 320
     this.inputContext = this.inputCanvas.getContext('2d')
+    this.useGrayscale = false
+    this.imageType = 'image/jpeg'
+    this.imageQuality = 0.2
   }
 
   setClientKey(clientKey) {
@@ -102,25 +105,25 @@ export default class RealInput {
       this.inputCanvas.width, this.inputCanvas.height)
       
     // 制作灰度图片，试图减少图片体积
-    /* 
-    const inputData = this.inputContext.getImageData(0, 0, this.inputCanvas.width, this.inputCanvas.height)
-    const data = inputData.data
-    for(let i = 0; i < data.byteLength; i += 4) {
-      const brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-      //const brightness = Math.floor((data[i] + data[i+1] + data[i+2])/3)
-      // red
-      data[i] = brightness;
-      // green
-      data[i + 1] = brightness;
-      // blue
-      data[i + 2] = brightness;
+    if(this.useGrayscale) {
+      const inputData = this.inputContext.getImageData(0, 0, this.inputCanvas.width, this.inputCanvas.height)
+      const data = inputData.data
+      for(let i = 0; i < data.byteLength; i += 4) {
+        const brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+        //const brightness = Math.floor((data[i] + data[i+1] + data[i+2])/3)
+        // red
+        data[i] = brightness;
+        // green
+        data[i + 1] = brightness;
+        // blue
+        data[i + 2] = brightness;
+      }
+      // overwrite original image
+      this.inputContext.putImageData(inputData, 0, 0)
     }
-    // overwrite original image
-    this.inputContext.putImageData(inputData, 0, 0)
-    */
   
-    const b64Image = this.inputCanvas.toDataURL('image/jpeg', 0.1)
-    const jpegData = b64.decode(b64Image.slice(23))
+    const b64Image = this.inputCanvas.toDataURL(this.imageType, this.imageQuality)
+    const jpegData = b64.decode(b64Image.slice(13+this.imageType.length))
     this.client.inputImage(this.model, jpegData)
 
     // 上述操作大概6ms完成
@@ -182,11 +185,26 @@ export default class RealInput {
           if(res.data.code == 0) {
             this.client = new Client()
             this.client.setToken(res.data.token)
-            if(res.data.suggestFPS) {
-              this.setInputFPS(res.data.suggestFPS)
-            }
-            if(res.data.packetSize) {
-              this.client.setPacketSize(res.data.packetSize)
+            const config = res.data.config
+            if(config) {
+              if(config.inputFPS) {
+                this.setInputFPS(config.inputFPS)
+              }
+              if(config.packetSize) {
+                this.client.setPacketSize(config.packetSize)
+              }
+              if(config.imageType) {
+                this.imageType = config.imageType
+              }
+              if(config.imageQuality) {
+                this.imageQuality = config.imageQuality
+              } 
+              if(config.imageWidth) {
+                this.inputCanvas.width = config.imageWidth
+              }
+              if(config.imageHeight) {
+                this.inputCanvas.height = config.imageHeight
+              }
             }
             this.client.setMessageCallback(this.__onInputResponse.bind(this))
             this.client.setServer(res.data.server)
