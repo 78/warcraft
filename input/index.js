@@ -22,8 +22,8 @@ export default class RealInput {
     this.hiddenContext = this.hiddenCanvas.getContext('2d')
     this.posePool = new Pool(Pose)
     this.inputCanvas = wx.createCanvas()
-    this.inputCanvas.width = 180
-    this.inputCanvas.height = 320
+    this.inputCanvas.width = 181
+    this.inputCanvas.height = 321
     this.inputContext = this.inputCanvas.getContext('2d')
     this.useGrayscale = false
     this.imageType = 'image/jpeg'
@@ -53,7 +53,7 @@ export default class RealInput {
 
   render(ctx, startX=0, startY=0) {
     // 显示摄像头影像，用于调试
-    // ctx.drawImage(this.inputCanvas, 0, 0)
+    ctx.drawImage(this.inputCanvas, 0, 0)
     this.posePool.render(ctx, startX, startY)
   }
 
