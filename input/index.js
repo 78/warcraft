@@ -25,9 +25,15 @@ export default class RealInput {
     this.inputCanvas.width = 181
     this.inputCanvas.height = 321
     this.inputContext = this.inputCanvas.getContext('2d')
-    this.useGrayscale = false
+    this.movementCanvas = wx.createCanvas()
+    this.movementCanvas.width = 18
+    this.movementCanvas.height = 32
+    this.movementContext = this.movementCanvas.getContext('2d')
     this.imageType = 'image/jpeg'
     this.imageQuality = 0.2
+    this.enableMovementDetection = true
+    this.movementThreshold = 10
+    this.movementSensitiveness = 50
   }
 
   setClientKey(clientKey) {
@@ -51,9 +57,49 @@ export default class RealInput {
     this.model = model
   }
 
+  updateConfig(config) {
+    if(config.inFPS && this.inputFPS != config.inFPS) {
+      this.setInputFPS(config.inFPS)
+    }
+    if(config.pS && this.client.packetSize != config.pS) {
+      this.client.setPacketSize(config.pS)
+    }
+    if(config.inT && this.imageType != config.inT) {
+      this.imageType = config.inT
+    }
+    if(config.inQ && this.imageQuality != config.inQ) {
+      this.imageQuality = config.inQ
+    } 
+    if(config.inW && this.inputCanvas.width != config.inW) {
+      this.inputCanvas.width = config.inW
+    }
+    if(config.inH && this.inputCanvas.height != config.inH) {
+      this.inputCanvas.height = config.inH
+    }
+    if(config.mvOn && this.enableMovementDetection != config.mvOn) {
+      this.enableMovementDetection = config.mvOn
+    }
+    if(config.mvOn) {
+      if(config.mvW && this.movementCanvas.width != config.mvW) {
+        this.movementCanvas.width = config.mvW
+      }
+      if(config.mvH && this.movementCanvas.height != config.mvH) {
+        this.movementCanvas.height = config.mvH
+      }
+      if(config.mvS && this.movementSensitiveness != config.mvS) {
+        this.movementSensitiveness = config.mvS
+      }
+      if(config.mvC && this.movementThreshold != config.mvC) {
+        this.movementThreshold = config.mvC
+      }
+    }
+  }
+
   render(ctx, startX=0, startY=0) {
     // 显示摄像头影像，用于调试
-    ctx.drawImage(this.inputCanvas, 0, 0)
+    // ctx.drawImage(this.inputCanvas, 0, 0)
+    // ctx.drawImage(this.movementCanvas, 0, 0, this.movementCanvas.width, this.movementCanvas.height,
+    //  0,0, window.innerWidth, window.innerHeight)
     this.posePool.render(ctx, startX, startY)
   }
 
@@ -67,6 +113,9 @@ export default class RealInput {
 
   // 从服务器返回动作信息
   __onInputResponse(msg) {
+    if(msg.config) {
+      this.updateConfig(msg.config)
+    }
     if(msg.poses) {
       // translate coordinates to this device
       for(const p of msg.poses) {
@@ -98,29 +147,43 @@ export default class RealInput {
     const img = this.hiddenContext.createImageData(frame.width, frame.height)
     img.data.set(bytes)
     this.hiddenContext.putImageData(img, 0, 0)
-    
+
+    // 运动检测
+    if(this.enableMovementDetection) {
+      this.movementContext.drawImage(this.hiddenCanvas, 0, 0, 
+        this.hiddenCanvas.width, this.hiddenCanvas.height, 0, 0,
+        this.movementCanvas.width, this.movementCanvas.height)
+      if(this.lastInputData) {
+        const inputImage = this.movementContext.getImageData(0, 0, 
+          this.movementCanvas.width, this.movementCanvas.height)
+        const inputData = inputImage.data
+        let diffs = 0
+        for(let i=0; i<inputData.byteLength; i+=4) {
+          const v = Math.floor((inputData[i] + inputData[i+1] + inputData[i+2])/3)
+          inputData[i] = inputData[i+1] = inputData[i+2] = v
+          const diff = Math.abs(this.lastInputData[i]-v)
+          if(diff > 50) {
+            diffs += diff
+          }
+        }
+        this.movementContext.putImageData(inputImage, 0, 0)
+        this.lastInputData = inputData
+        if(diffs < 10) {
+          // no movement
+          this.busy = false
+          return
+        }
+        console.log('moved', new Date())
+      }else{
+        this.lastInputData = this.movementContext.getImageData(0, 0, 
+          this.movementCanvas.width, this.movementCanvas.height).data
+      }
+    }
+
     // 压缩分辨率，摄像头分辨率到识别分辨率的转换
     this.inputContext.drawImage(this.hiddenCanvas, 0, 0, 
       this.hiddenCanvas.width, this.hiddenCanvas.height, 0, 0,
       this.inputCanvas.width, this.inputCanvas.height)
-      
-    // 制作灰度图片，试图减少图片体积
-    if(this.useGrayscale) {
-      const inputData = this.inputContext.getImageData(0, 0, this.inputCanvas.width, this.inputCanvas.height)
-      const data = inputData.data
-      for(let i = 0; i < data.byteLength; i += 4) {
-        const brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-        //const brightness = Math.floor((data[i] + data[i+1] + data[i+2])/3)
-        // red
-        data[i] = brightness;
-        // green
-        data[i + 1] = brightness;
-        // blue
-        data[i + 2] = brightness;
-      }
-      // overwrite original image
-      this.inputContext.putImageData(inputData, 0, 0)
-    }
   
     const b64Image = this.inputCanvas.toDataURL(this.imageType, this.imageQuality)
     const jpegData = b64.decode(b64Image.slice(13+this.imageType.length))
@@ -185,26 +248,8 @@ export default class RealInput {
           if(res.data.code == 0) {
             this.client = new Client()
             this.client.setToken(res.data.token)
-            const config = res.data.config
-            if(config) {
-              if(config.inputFPS) {
-                this.setInputFPS(config.inputFPS)
-              }
-              if(config.packetSize) {
-                this.client.setPacketSize(config.packetSize)
-              }
-              if(config.imageType) {
-                this.imageType = config.imageType
-              }
-              if(config.imageQuality) {
-                this.imageQuality = config.imageQuality
-              } 
-              if(config.imageWidth) {
-                this.inputCanvas.width = config.imageWidth
-              }
-              if(config.imageHeight) {
-                this.inputCanvas.height = config.imageHeight
-              }
+            if(res.data.config) {
+              this.updateConfig(res.data.config)
             }
             this.client.setMessageCallback(this.__onInputResponse.bind(this))
             this.client.setServer(res.data.server)

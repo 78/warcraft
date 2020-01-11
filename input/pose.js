@@ -137,7 +137,7 @@ export default class Pose {
 
   checkPose(type) {
     if(type === 'HandsUp') {
-      if(this.keypoints.leftElbow.y < this.keypoints.leftEar.y && this.keypoints.rightElbow.y < this.keypoints.rightEar.y) {
+      if(this.keypoints.leftWrist.y < this.keypoints.leftEye.y && this.keypoints.rightWrist.y < this.keypoints.rightEye.y) {
         return true
       }
     }else{
