@@ -4,9 +4,14 @@ import Pose from './pose'
 import Pool from './pool'
 
 const b64 = require('./3rdparty/base64')
+let instance = null
 
 export default class RealInput {
   constructor() {
+    if(instance)
+      return instance
+    instance = this
+    
     this.camera = new Camera()
     this.__init()
   }
@@ -21,7 +26,7 @@ export default class RealInput {
     this.hiddenContext = this.hiddenCanvas.getContext('2d')
     this.posePool = new Pool(Pose)
     this.inputCanvas = wx.createCanvas()
-    this.inputCanvas.width = 181
+    this.inputCanvas.width = 193
     this.inputCanvas.height = 321
     this.inputContext = this.inputCanvas.getContext('2d')
     this.movementCanvas = wx.createCanvas()

@@ -8,7 +8,6 @@ import RealInput   from '../input/index'
 
 const ctx   = canvas.getContext('2d')
 const databus = new DataBus()
-const realInput = new RealInput()
 
 /**
  * 游戏主函数
@@ -17,9 +16,10 @@ export default class Game {
   constructor() {
     this.restart()
 
-    realInput.setClientKey('xxcRTlCPhDsd9TBL')
-    realInput.openCamera()
-    realInput.capture({
+    this.realInput = new RealInput()
+    this.realInput.setClientKey('xxcRTlCPhDsd9TBL')
+    this.realInput.openCamera()
+    this.realInput.capture({
       model: 'pose'
     })
 
@@ -119,7 +119,7 @@ export default class Game {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     this.bg.render(ctx)
-    realInput.render(ctx, 0, 0)
+    this.realInput.render(ctx, 0, 0)
 
     databus.bullets
           .concat(databus.enemys)
@@ -152,8 +152,8 @@ export default class Game {
 
   // 游戏逻辑更新主函数
   update() {
-    const one = realInput.getFirstPlayer()
-    realInput.update()
+    const one = this.realInput.getFirstPlayer()
+    this.realInput.update()
 
     if ( databus.gameOver ) {
       if(one && one.checkPose('HandsUp')) {
