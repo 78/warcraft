@@ -33,6 +33,7 @@ new Test()
 ## FAQ
 
 1、如何定义新的姿态识别？
+
 可以在./input/pose.js的checkPose里定义姿态，然后在游戏loop的update事件中，通过下面代码判断姿态。
 ```
 const player = this.realInput.getFirstPlayer()
