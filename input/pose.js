@@ -136,7 +136,7 @@ export default class Pose {
   }
 
   checkPose(type) {
-    if(type === 'HandsUp') {
+    if(type === 'HandsUp' && this.checkAllPartsVisible(['leftWrist','rightWrist','leftEye','rightEye'])) {
       if(this.keypoints.leftWrist.y < this.keypoints.leftEye.y && this.keypoints.rightWrist.y < this.keypoints.rightEye.y) {
         return true
       }
@@ -144,5 +144,14 @@ export default class Pose {
       console.error('Unknown pose type', type)
     }
     return false
+  }
+
+  checkAllPartsVisible(parts) {
+    for(const part of parts) {
+      if(this.keypoints[part].score < PART_SCORE_MARGIN) {
+        return false
+      }
+    }
+    return true
   }
 }

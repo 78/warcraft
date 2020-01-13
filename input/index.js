@@ -3,8 +3,7 @@ import Camera from './camera'
 import Pose from './pose'
 import Pool from './pool'
 
-const b64 = require('base64-arraybuffer')
-
+const b64 = require('./3rdparty/base64')
 
 export default class RealInput {
   constructor() {
@@ -173,7 +172,6 @@ export default class RealInput {
           this.busy = false
           return
         }
-        console.log('moved', new Date())
       }else{
         this.lastInputData = this.movementContext.getImageData(0, 0, 
           this.movementCanvas.width, this.movementCanvas.height).data
@@ -220,9 +218,6 @@ export default class RealInput {
 
   // 开始识别输入动作
   capture(config, cb) {
-    if(config.inputFPS) {
-      this.setInputFPS(config.inputFPS)
-    }
     if(config.model) {
       this.setModel(config.model)
     }
@@ -236,7 +231,6 @@ export default class RealInput {
       version: versionInfo,
       playerId: Math.random().toString(),
       clientKey: this.clientKey,
-      inputFPS: this.inputFPS,
       model: this.model
     }
     wx.request({

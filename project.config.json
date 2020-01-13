@@ -23,9 +23,9 @@
 		}
 	},
 	"compileType": "game",
-	"libVersion": "1.9.94",
+	"libVersion": "2.9.4",
 	"appid": "wx5c7c88c9a040226f",
-	"projectname": "minigame-1",
+	"projectname": "warcraft",
 	"simulatorType": "wechat",
 	"simulatorPluginLibVersion": {},
 	"condition": {

@@ -20,7 +20,6 @@ export default class Game {
     realInput.setClientKey('xxcRTlCPhDsd9TBL')
     realInput.openCamera()
     realInput.capture({
-      inputFPS: 10,
       model: 'pose'
     })
 
