@@ -178,8 +178,9 @@ export default class RealInput {
     timeMetrics.step3 = new Date() - st
   
     const b64Image = this.inputCanvas.toDataURL(this.imageType, this.imageQuality)
-    const jpegData = b64.decode(b64Image.slice(13+this.imageType.length))
     timeMetrics.step4 = new Date() - st
+    const jpegData = b64.decode(b64Image.slice(13+this.imageType.length))
+    timeMetrics.step5 = new Date() - st
     this.client.inputImage(this.model, jpegData, timeMetrics)
 
     // 上述操作大概6ms完成
@@ -198,6 +199,14 @@ export default class RealInput {
 
   // 从服务器返回动作信息
   __onInputResponse(msg) {
+    // ========= 以下新增加
+    if(msg.timestamp) {
+      if(this.lastResponseTimestamp && this.lastResponseTimestamp > msg.timestamp) {
+        return
+      }
+      this.lastResponseTimestamp = msg.timestamp
+    }
+    // ========== 以上新增加
     if(msg.config) {
       this.updateConfig(msg.config)
     }
