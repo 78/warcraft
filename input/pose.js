@@ -126,7 +126,7 @@ export default class Pose {
         const b = this.target.keypoints[key]
         if(!a || a.score < PART_SCORE_MARGIN) {
           this.keypoints[key] = b
-        }else{
+        }else if(b.score >= PART_SCORE_MARGIN) { // 如果不加这个判断，飞机会出现闪动现象
           a.x += getMoveDistance(b.x, a.x)
           a.y += getMoveDistance(b.y, a.y)
           a.score = b.score
