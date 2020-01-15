@@ -28,7 +28,6 @@ module.exports = class Protocol {
       throw "Invalid packet size"
     }
     this.packetSize = size
-    console.log('updated packet size', size)
   }
 
   onPacketData(data, rinfo) {

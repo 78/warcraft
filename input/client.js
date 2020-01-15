@@ -42,12 +42,13 @@ export default class Client extends Protocol {
     this.onPacketData(new Uint8Array(res.message), res.remoteInfo)
   }
 
-  inputImage(model, imageData) {
+  inputImage(model, imageData, timeMetrics) {
     const msg = {
       token: this.token,
       type: 'InputImage',
       model: model,
-      image: new Uint8Array(imageData)
+      image: new Uint8Array(imageData),
+      timeMetrics: timeMetrics
     }
     this.sendMessage(msg)
   }

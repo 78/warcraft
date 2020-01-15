@@ -113,33 +113,18 @@ export default class RealInput {
 
   update() {
     this.posePool.update()
-  }
 
-  // 从服务器返回动作信息
-  __onInputResponse(msg) {
-    if(msg.config) {
-      this.updateConfig(msg.config)
-    }
-    if(msg.poses) {
-      // translate coordinates to this device
-      for(const p of msg.poses) {
-        for(const k in p.keypoints) {
-          const kp = p.keypoints[k]
-          kp.x = kp.x * window.innerWidth / this.inputCanvas.width
-          kp.y = kp.y * window.innerHeight / this.inputCanvas.height
-        }
-      }
-      this.posePool.addTargets(msg.poses)
+    // 处理图像输入
+    if(this.currentFrame) {
+      const f = this.currentFrame
+      this.currentFrame = null
+      this.handleFrame(f)
     }
   }
 
-  // 从摄像头获得输入图像
-  __onFrame(frame) {
-    if(this.busy || !this.client) {
-      return
-    }
-    this.busy = true
+  handleFrame(frame) {
     const st = new Date()
+    const timeMetrics = {}
 
     // hiddenCanvas的大小等于摄像头图像大小，inputCanvas的大小等于要识别的图像大小
     if(this.hiddenCanvas.width != frame.width || this.hiddenCanvas.height != frame.height) {
@@ -147,10 +132,12 @@ export default class RealInput {
       this.hiddenCanvas.height = frame.height
     }
 
+    // 复制frame数据到hiddenCanvas，用于压缩图像
     const bytes = new Uint8ClampedArray(frame.data)
     const img = this.hiddenContext.createImageData(frame.width, frame.height)
     img.data.set(bytes)
     this.hiddenContext.putImageData(img, 0, 0)
+    timeMetrics.step1 = new Date() - st
 
     // 运动检测
     if(this.enableMovementDetection) {
@@ -182,20 +169,23 @@ export default class RealInput {
           this.movementCanvas.width, this.movementCanvas.height).data
       }
     }
+    timeMetrics.step2 = new Date() - st
 
     // 压缩分辨率，摄像头分辨率到识别分辨率的转换
     this.inputContext.drawImage(this.hiddenCanvas, 0, 0, 
       this.hiddenCanvas.width, this.hiddenCanvas.height, 0, 0,
       this.inputCanvas.width, this.inputCanvas.height)
+    timeMetrics.step3 = new Date() - st
   
     const b64Image = this.inputCanvas.toDataURL(this.imageType, this.imageQuality)
     const jpegData = b64.decode(b64Image.slice(13+this.imageType.length))
-    this.client.inputImage(this.model, jpegData)
+    timeMetrics.step4 = new Date() - st
+    this.client.inputImage(this.model, jpegData, timeMetrics)
 
     // 上述操作大概6ms完成
-    //console.log(frame.width, frame.height, new Date() - st, 'ms', 'size', jpegData.byteLength)
+    // console.log(frame.width, frame.height, new Date() - st, 'ms', 'size', jpegData.byteLength)
     const delta = new Date() - this.lastMoveTime
-    if(delta > 0) {
+    if(this.lastMoveTime && delta > 0) {
       setTimeout(() => {
         this.busy = false
         this.lastMoveTime = new Date()
@@ -204,6 +194,33 @@ export default class RealInput {
       this.busy = false
       this.lastMoveTime = new Date()
     }
+  }
+
+  // 从服务器返回动作信息
+  __onInputResponse(msg) {
+    if(msg.config) {
+      this.updateConfig(msg.config)
+    }
+    if(msg.poses) {
+      // translate coordinates to this device
+      for(const p of msg.poses) {
+        for(const k in p.keypoints) {
+          const kp = p.keypoints[k]
+          kp.x = kp.x * window.innerWidth / this.inputCanvas.width
+          kp.y = kp.y * window.innerHeight / this.inputCanvas.height
+        }
+      }
+      this.posePool.addTargets(msg.poses)
+    }
+  }
+
+  // 从摄像头获得输入图像
+  __onFrame(frame) {
+    if(this.busy || !this.client) {
+      return
+    }
+    this.currentFrame = frame
+    this.busy = true
   }
 
   openCamera() {

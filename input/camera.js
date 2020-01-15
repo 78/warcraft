@@ -27,7 +27,7 @@ export default class Camera {
       y: window.innerHeight,
       devicePosition: 'front',
       flash: 'off',
-      size: 'medium',
+      size: 'small',
       success: () => {
         console.log('open camera succeeded')
         wx.setKeepScreenOn({
