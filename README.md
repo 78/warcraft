@@ -33,6 +33,7 @@ new Test()
 ## FAQ
 
 1、如何定义新的姿态识别？
+
 可以在./input/pose.js的checkPose里定义姿态，然后在游戏loop的update事件中，通过下面代码判断姿态。
 ```
 const player = this.realInput.getFirstPlayer()
@@ -42,3 +43,11 @@ if(player) {
   }
 }
 ```
+
+2、上线注意事项
+
+考虑到需要使用UDP传输数据，需要小游戏基础库2.9.4（包括）以上，覆盖88%微信用户，低于该版本尚未做测试。
+
+添加域名 realinput.keep.fm 到白名单。
+
+游戏过程中使用到用户摄像头，考虑是否需要放置隐私声明入口。
