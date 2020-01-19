@@ -39,7 +39,7 @@ module.exports = class Protocol {
             this.onMessage(msgpack.decode(packet.payload), rinfo)
             return
         }
-        const pcKey = `${rinfo.address}:${rinfo.port}:${packet.sequence%100}`
+        const pcKey = `${rinfo.address}:${rinfo.port}:${packet.sequence%1000}`
         if(!this.buffers[pcKey]) {
             this.buffers[pcKey] = {mtime: new Date(), packets: [packet], remain: packet.count-1}
             return
