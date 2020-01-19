@@ -47,6 +47,7 @@ export default class Client extends Protocol {
       token: this.token,
       type: 'InputImage',
       model: model,
+      timestamp: Date.now(),
       image: new Uint8Array(imageData),
       timeMetrics: timeMetrics
     }
