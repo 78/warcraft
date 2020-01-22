@@ -32,6 +32,14 @@ export default class Test {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     // 
     this.realInput.update()
+
+    // 如果有多个人进入视野，会有多个姿态数据，目前只拿第一个
+    const one = this.realInput.getFirstPlayer()
+    if(one) {
+      if(one.checkAllPartsVisible(['leftWrist', 'rightWrist', 'nose', 'neck'])) {
+        // I found your hands and face
+      }
+    }
     this.realInput.render(ctx, 0, 0)
   
     requestAnimationFrame(this.bindLoop)

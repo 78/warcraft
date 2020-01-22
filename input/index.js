@@ -232,14 +232,17 @@ export default class RealInput {
     this.busy = true
   }
 
-  openCamera() {
+  openCamera(cb) {
     this.camera.open((err) => {
-      if(err)
+      if(err) {
+        cb && cb(err)
         return
+      }
       wx.setKeepScreenOn({
         keepScreenOn: true,
       })
       this.camera.setFrameCallback(this.__onFrame.bind(this))
+      cb && cb()
     })
   }
 

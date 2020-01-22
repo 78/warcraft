@@ -7,5 +7,5 @@ import Test from './input/test'
 
 
 new Game()
-// new Test()
+// new Test() 测试人体姿态输入模式
 
